@@ -84,18 +84,18 @@ your-blog/
 └── .github/workflows/giscus-bot.yml
 ```
 
-Example:
+Example (`seonWKim/blog` shown — **replace with your own values**):
 
 ```yaml
 provider:
-  name: openai
-  model: gpt-4o
+  name: openai                          # your AI provider
+  model: gpt-4o                         # your preferred model
 
 github:
-  repo: "user/blog"
-  discussionCategory: "General"
+  repo: "seonWKim/blog"                 # ⚠️ change to your GitHub "owner/repo"
+  discussionCategory: "General"         # ⚠️ must match a category in your repo's Discussions
 
-personas:
+personas:                               # ⚠️ customize these to fit your blog's voice
   - name: "Curious Reader"
     description: "Asks thoughtful questions about the content"
     tone: "friendly, inquisitive"
@@ -104,11 +104,13 @@ personas:
     tone: "constructive, analytical"
 
 limits:
-  maxPersonas: 2
+  maxPersonas: 2                        # number of comments generated per post
 
 labeling:
   prefix: "🤖 **AI-Generated Comment**"
 ```
+
+> **Note:** Without a config file, giscus-bot defaults to 1 "Curious Reader" persona with OpenAI `gpt-4o`. Add a config file when you want multiple personas or custom settings.
 
 ## Details
 
