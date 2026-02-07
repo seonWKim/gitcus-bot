@@ -13,7 +13,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "tsc --noEmit",
-    "bundle:action": "tsc && ncc build dist/action.js -o action-bundle"
+    "bundle:action": "tsc && ncc build dist/action.js -o action-bundle",
+    "prepare": "git config core.hooksPath .githooks"
   },
   "keywords": [
     "giscus",

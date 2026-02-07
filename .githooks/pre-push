@@ -1,0 +1,14 @@
+#!/bin/sh
+# Pre-push hook: rebuild the action bundle and auto-commit if changed.
+
+echo "Building action bundle..."
+npm run bundle:action
+
+# Only commit if the bundle actually changed
+if ! git diff --quiet action-bundle/; then
+  git add action-bundle/
+  git commit -m "chore: rebuild action bundle"
+  echo "Action bundle updated and committed."
+else
+  echo "Action bundle is up-to-date."
+fi
