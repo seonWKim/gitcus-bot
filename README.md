@@ -52,10 +52,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: seonWKim/gitcus-bot@main
+      - uses: seonWKim/giscus-bot@main
         with:
           github-token: ${{ secrets.GISCUS_BOT_GITHUB_TOKEN }}
-          provider: openai
           api-key: ${{ secrets.GISCUS_BOT_OPENAI_API_KEY }}
           blog-url: ${{ github.event.inputs.url }}
 ```
@@ -65,7 +64,16 @@ jobs:
 
 ### Config File (optional)
 
-Create `giscus-bot.config.yaml` for custom personas and settings:
+Place `giscus-bot.config.yaml` in your **project root** (the repository root for GitHub Action, or the directory where you run the CLI). The CLI also accepts `--config <path>` to point to a different location.
+
+```
+your-blog/
+├── _posts/
+├── giscus-bot.config.yaml   ← here
+└── .github/workflows/giscus-bot.yml
+```
+
+Example:
 
 ```yaml
 provider:
@@ -119,7 +127,7 @@ labeling:
 | Input | Required | Default | Description |
 |-------|----------|---------|-------------|
 | `github-token` | Yes | | GitHub PAT with `discussions:write` |
-| `provider` | Yes | | AI provider |
+| `provider` | No | `openai` | AI provider |
 | `api-key` | Yes | | API key for the provider |
 | `model` | No | `gpt-4o` | AI model |
 | `blog-url` | No | | Blog post URL (manual trigger) |
