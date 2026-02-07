@@ -45,6 +45,7 @@ function defaultConfig(): GiscusBotConfig {
     ],
     limits: {
       maxPersonas: 1,
+      postsPerRun: 1,
     },
     labeling: {
       prefix: "🤖 **AI-Generated Comment**",

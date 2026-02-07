@@ -48,10 +48,17 @@ Create `.github/workflows/giscus-bot.yml`:
 name: Generate Discussion Comments
 
 on:
+  workflow_run:                 # runs after GitHub Pages deployment finishes
+    workflows: ["pages-build-deployment"]
+    types: [completed]
+
+  schedule:
+    - cron: "0 9 * * 1"        # every Monday at 9am UTC
+
   push:
     paths: ["_posts/**"]       # auto-trigger on new posts
 
-  workflow_dispatch:            # manual trigger
+  workflow_dispatch:            # manual trigger with a specific URL
     inputs:
       url:
         description: "Blog post URL"
@@ -61,6 +68,7 @@ on:
 jobs:
   comment:
     runs-on: ubuntu-latest
+    if: github.event.workflow_run.conclusion == 'success' || github.event_name != 'workflow_run'
     steps:
       - uses: actions/checkout@v4
       - uses: seonWKim/giscus-bot@main
@@ -70,8 +78,11 @@ jobs:
           blog-url: ${{ github.event.inputs.url }}
 ```
 
-- **Push trigger**: detects newly added markdown files in the commit and reads them directly from the checkout
-- **Manual trigger**: scrapes the live blog URL you provide
+- **workflow_run**: runs after GitHub Pages deploys, so blog content is live before commenting
+- **schedule**: picks random posts on a cron schedule to keep discussions alive
+- **push**: picks random posts from the checkout when new content is pushed
+- **workflow_dispatch (manual)**: scrapes the live blog URL you provide
+- For non-manual triggers, the bot scans blog directories (`_posts/`, `content/`, `posts/`, `blog/`, `src/posts/`), shuffles them, and picks `postsPerRun` random posts to comment on
 - `actions/checkout@v4` is required so the action can read your posts and config
 - No build step needed in your workflow — the action handles `npm ci` and `tsc` internally
 
@@ -107,6 +118,7 @@ personas:                               # ⚠️ customize these to fit your blo
 
 limits:
   maxPersonas: 2                        # number of comments generated per post
+  postsPerRun: 1                        # random posts to comment on per run
 
 labeling:
   prefix: "🤖 **AI-Generated Comment**"

@@ -16,6 +16,7 @@ personas:
 
 limits:
   maxPersonas: 2
+  postsPerRun: 1
 
 labeling:
   prefix: "🤖 **AI-Generated Comment**"

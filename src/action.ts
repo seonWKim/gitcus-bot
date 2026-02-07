@@ -3,12 +3,14 @@
  *
  * Runs as a composite action — inputs are passed as INPUT_* env vars.
  *
- * Two trigger modes:
+ * Trigger modes:
  *   1. Manual (workflow_dispatch): scrapes the provided blog-url
- *   2. Push: reads newly added markdown files from the checkout
+ *   2. Automatic (push, workflow_run, schedule): scans checkout for markdown
+ *      files, picks random posts, and generates comments
  */
 
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
+import { join, extname } from "node:path";
 import { loadConfig } from "./config/loader.js";
 import { createProvider } from "./providers/index.js";
 import { generate } from "./core/generator.js";
@@ -20,6 +22,9 @@ const PROVIDER_ENV_MAP: Record<string, string> = {
   openai: "GISCUS_BOT_OPENAI_API_KEY",
   claude: "GISCUS_BOT_CLAUDE_API_KEY",
 };
+
+/** Directories to scan for blog posts (relative to repo root) */
+const BLOG_DIRS = ["_posts", "content", "posts", "blog", "src/posts"];
 
 /** Default config when no config file exists in the user's repo */
 function defaultConfig(): GiscusBotConfig {
@@ -33,7 +38,7 @@ function defaultConfig(): GiscusBotConfig {
         tone: "friendly, inquisitive",
       },
     ],
-    limits: { maxPersonas: 1 },
+    limits: { maxPersonas: 1, postsPerRun: 1 },
     labeling: { prefix: "🤖 **AI-Generated Comment**" },
   };
 }
@@ -45,6 +50,48 @@ function info(msg: string): void {
 function fail(msg: string): void {
   console.error(`::error::${msg}`);
   process.exitCode = 1;
+}
+
+/**
+ * Recursively find all markdown files (.md, .mdx) in a directory.
+ */
+function findMarkdownFiles(dir: string): string[] {
+  const results: string[] = [];
+  if (!existsSync(dir)) return results;
+
+  const entries = readdirSync(dir);
+  for (const entry of entries) {
+    const fullPath = join(dir, entry);
+    const stat = statSync(fullPath);
+    if (stat.isDirectory()) {
+      results.push(...findMarkdownFiles(fullPath));
+    } else if ([".md", ".mdx"].includes(extname(entry).toLowerCase())) {
+      results.push(fullPath);
+    }
+  }
+  return results;
+}
+
+/**
+ * Scan all known blog directories for markdown files.
+ */
+function scanBlogPosts(): string[] {
+  const files: string[] = [];
+  for (const dir of BLOG_DIRS) {
+    files.push(...findMarkdownFiles(dir));
+  }
+  return files;
+}
+
+/**
+ * Fisher-Yates shuffle (in-place).
+ */
+function shuffle<T>(arr: T[]): T[] {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
 }
 
 async function run(): Promise<void> {
@@ -79,6 +126,9 @@ async function run(): Promise<void> {
     config.provider.name = providerName as ProviderName;
     config.provider.model = model;
 
+    // Ensure postsPerRun has a default
+    config.limits.postsPerRun = config.limits.postsPerRun ?? 1;
+
     // Infer repo from GITHUB_REPOSITORY if not in config
     if (!config.github.repo && process.env.GITHUB_REPOSITORY) {
       config.github.repo = process.env.GITHUB_REPOSITORY;
@@ -87,39 +137,27 @@ async function run(): Promise<void> {
     const provider = createProvider(config.provider);
 
     if (blogUrl) {
-      // ── Manual trigger ──
+      // ── Manual trigger (workflow_dispatch) ──
       info(`Processing URL: ${blogUrl}`);
       const result = await generate(blogUrl, config, provider);
       info(`Generated ${result.comments.length} comment(s) for "${result.postTitle}"`);
       if (result.discussionUrl) info(`Discussion: ${result.discussionUrl}`);
     } else {
-      // ── Push trigger ──
-      const eventPath = process.env.GITHUB_EVENT_PATH;
-      if (!eventPath) throw new Error("GITHUB_EVENT_PATH not set");
-
-      const payload = JSON.parse(readFileSync(eventPath, "utf-8"));
-      const files: string[] = [];
-
-      // Only newly added files (skip modified to avoid duplicates)
-      if (payload.commits) {
-        for (const commit of payload.commits) {
-          for (const file of (commit.added ?? []) as string[]) {
-            if (
-              file.match(/\.(md|mdx)$/) &&
-              file.match(/^(content|_posts|src\/posts|posts|blog)\//)
-            ) {
-              files.push(file);
-            }
-          }
-        }
-      }
-
-      if (files.length === 0) {
-        info("No new blog posts detected in this push. Nothing to do.");
+      // ── Automatic trigger (push, workflow_run, schedule) ──
+      const allFiles = scanBlogPosts();
+      if (allFiles.length === 0) {
+        info("No blog posts found in any standard directory. Nothing to do.");
         return;
       }
 
-      for (const file of files) {
+      info(`Found ${allFiles.length} blog post(s) across all directories.`);
+
+      // Shuffle and pick postsPerRun random posts
+      shuffle(allFiles);
+      const selected = allFiles.slice(0, config.limits.postsPerRun);
+      info(`Selected ${selected.length} random post(s) to comment on.`);
+
+      for (const file of selected) {
         info(`Processing file: ${file}`);
         const postContext = extractPostFromFile(file);
         info(`Extracted post: "${postContext.title}"`);

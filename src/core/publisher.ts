@@ -214,6 +214,63 @@ export async function addComment(
 }
 
 /**
+ * Get the set of persona names that have already commented on a discussion.
+ *
+ * Queries the discussion's comments via GraphQL and checks if any start
+ * with the labeling prefix pattern. Extracts persona names from comments
+ * matching the format: `<prefix> · Persona: <name>`.
+ *
+ * @param discussionId - The discussion node ID.
+ * @param labelPrefix - The labeling prefix used by the bot (e.g., "🤖 **AI-Generated Comment**").
+ * @param token - GitHub PAT.
+ * @returns Set of persona names that have already commented.
+ */
+export async function getDiscussionBotComments(
+  discussionId: string,
+  labelPrefix: string,
+  token?: string,
+): Promise<Set<string>> {
+  const client = createClient(token);
+
+  const result = await client<{
+    node: {
+      comments: {
+        nodes: Array<{ body: string }>;
+      };
+    };
+  }>(
+    `query($id: ID!) {
+      node(id: $id) {
+        ... on Discussion {
+          comments(first: 100) {
+            nodes {
+              body
+            }
+          }
+        }
+      }
+    }`,
+    { id: discussionId },
+  );
+
+  const personas = new Set<string>();
+  const prefix = `${labelPrefix} · Persona: `;
+
+  for (const comment of result.node.comments.nodes) {
+    if (comment.body.startsWith(prefix)) {
+      // Extract persona name from the first line
+      const firstLine = comment.body.split("\n")[0];
+      const name = firstLine.slice(prefix.length).trim();
+      if (name) {
+        personas.add(name);
+      }
+    }
+  }
+
+  return personas;
+}
+
+/**
  * Find an existing discussion or create a new one for a blog post.
  *
  * This is the main entry point for the publisher — it ensures exactly

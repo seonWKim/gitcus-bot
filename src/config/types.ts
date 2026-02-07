@@ -40,6 +40,8 @@ export interface PersonaConfig {
 export interface LimitsConfig {
   /** Max number of personas to use per blog post (caps AI API calls) */
   maxPersonas: number;
+  /** How many random posts to comment on per run (default: 1) */
+  postsPerRun: number;
 }
 
 /** Controls the AI-generated label prepended to each comment */
