@@ -31,9 +31,14 @@ No config file needed. Defaults to OpenAI `gpt-4o` with a "Curious Reader" perso
 
 ### GitHub Action
 
-**Before setup, enable these in your blog repo's Settings:**
+**Before setup, configure your blog repo:**
 1. **Settings > General > Features > enable Discussions**
-2. **Settings > Actions > General > Workflow permissions > select "Read and write permissions"**
+2. **Settings > Developer settings > Personal access tokens > Fine-grained tokens > Generate new token**
+   - Set **Repository access** to your blog repo
+   - Under **Permissions > Repository permissions**, set **Discussions** to **Read and write**
+3. **Settings > Secrets and variables > Actions** — add two repository secrets:
+   - **`GISCUS_BOT_GITHUB_TOKEN`** — the PAT you just created
+   - **`GISCUS_BOT_OPENAI_API_KEY`** — your OpenAI API key
 
 Create `.github/workflows/giscus-bot.yml`:
 
@@ -51,9 +56,6 @@ on:
         required: true
         type: string
 
-permissions:
-  discussions: write
-
 jobs:
   comment:
     runs-on: ubuntu-latest
@@ -61,7 +63,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: seonWKim/giscus-bot@main
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ secrets.GISCUS_BOT_GITHUB_TOKEN }}
           api-key: ${{ secrets.GISCUS_BOT_OPENAI_API_KEY }}
           blog-url: ${{ github.event.inputs.url }}
 ```
@@ -126,7 +128,7 @@ labeling:
 
 | Variable | Description |
 |----------|-------------|
-| `GISCUS_BOT_GITHUB_TOKEN` | GitHub PAT with `discussions:write` (CLI only) |
+| `GISCUS_BOT_GITHUB_TOKEN` | GitHub PAT with `discussions:write` |
 | `GISCUS_BOT_OPENAI_API_KEY` | OpenAI API key |
 | `GISCUS_BOT_CLAUDE_API_KEY` | Anthropic API key (TBD) |
 | `GISCUS_BOT_OLLAMA_URL` | Ollama base URL (TBD) |
@@ -135,7 +137,7 @@ labeling:
 
 | Input | Required | Default | Description |
 |-------|----------|---------|-------------|
-| `github-token` | Yes | | GitHub token — use `${{ secrets.GITHUB_TOKEN }}` with `permissions: discussions: write` |
+| `github-token` | Yes | | GitHub PAT with `discussions:write` (see setup above) |
 | `provider` | No | `openai` | AI provider |
 | `api-key` | Yes | | API key for the provider |
 | `model` | No | `gpt-4o` | AI model |
