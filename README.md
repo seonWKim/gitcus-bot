@@ -6,7 +6,7 @@ Most blog posts have zero comments, creating no feedback loop for bloggers. gisc
 
 - AI posts top-level comments only; replies are reserved for humans
 - Every comment is clearly labeled as AI-generated
-- Pluggable AI providers: OpenAI, Claude, Ollama
+- Pluggable AI providers: OpenAI, Claude (TBD), Ollama (TBD)
 - User-defined personas with configurable limits
 - Works as a CLI tool or GitHub Action
 
@@ -15,7 +15,7 @@ Most blog posts have zero comments, creating no feedback loop for bloggers. gisc
 1. **GitHub Discussions enabled** on your repository (Settings > Features > Discussions)
 2. **A Discussion category** created for blog comments (e.g., "Blog Comments")
 3. **A GitHub PAT** with `discussions:write` scope (the default `GITHUB_TOKEN` does not have Discussions permissions)
-4. **An AI provider API key** (OpenAI, Anthropic, or a local Ollama instance)
+4. **An AI provider API key** (OpenAI, Anthropic (TBD), or a local Ollama instance (TBD))
 
 ## Quick Start
 
@@ -31,7 +31,7 @@ Create `giscus-bot.config.yaml` in your project root:
 
 ```yaml
 provider:
-  name: openai                          # openai | claude | ollama
+  name: openai                          # openai | claude (TBD) | ollama (TBD)
   model: gpt-4o
 
 github:
@@ -81,7 +81,7 @@ giscus-bot generate <url> [options]
 
 Options:
   -c, --config <path>      Path to config file (default: ./giscus-bot.config.yaml)
-  -p, --provider <name>    Override AI provider (openai|claude|ollama)
+  -p, --provider <name>    Override AI provider (openai|claude (TBD)|ollama (TBD))
   -n, --max-personas <n>   Override max personas to use
   --dry-run                Preview comments without posting to GitHub
 ```
@@ -89,8 +89,8 @@ Options:
 Examples:
 
 ```bash
-# Use Claude instead of the configured provider
-giscus-bot generate https://myblog.com/post --provider claude
+# Use Claude instead of the configured provider (TBD)
+# giscus-bot generate https://myblog.com/post --provider claude
 
 # Only generate 1 comment even if config has more personas
 giscus-bot generate https://myblog.com/post --max-personas 1
@@ -169,7 +169,7 @@ on:
 | Input | Required | Default | Description |
 |-------|----------|---------|-------------|
 | `github-token` | Yes | | GitHub PAT with `discussions:write` scope |
-| `provider` | Yes | | AI provider: `openai`, `claude`, or `ollama` |
+| `provider` | Yes | | AI provider: `openai`, `claude` (TBD), or `ollama` (TBD) |
 | `api-key` | Yes | | API key for the AI provider |
 | `model` | No | `gpt-4o` | AI model to use |
 | `blog-url` | No | | Blog post URL (for manual trigger) |
@@ -188,8 +188,8 @@ Add these in your repo's Settings > Secrets and variables > Actions:
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `name` | `openai` \| `claude` \| `ollama` | Which AI provider to use |
-| `model` | string | Model ID (e.g., `gpt-4o`, `claude-sonnet-4-5-20250929`, `llama3`) |
+| `name` | `openai` \| `claude` (TBD) \| `ollama` (TBD) | Which AI provider to use |
+| `model` | string | Model ID (e.g., `gpt-4o`) |
 
 ### `github`
 
@@ -226,8 +226,8 @@ An array of personas. Each persona generates one comment per blog post.
 |----------|-------------|
 | `GISCUS_BOT_GITHUB_TOKEN` | GitHub PAT with `discussions:write` |
 | `GISCUS_BOT_OPENAI_API_KEY` | OpenAI API key |
-| `GISCUS_BOT_CLAUDE_API_KEY` | Anthropic API key |
-| `GISCUS_BOT_OLLAMA_URL` | Ollama base URL (default: `http://localhost:11434`) |
+| `GISCUS_BOT_CLAUDE_API_KEY` | Anthropic API key (TBD) |
+| `GISCUS_BOT_OLLAMA_URL` | Ollama base URL (TBD) |
 
 Environment variables can also be referenced in the config file using `${VAR_NAME}` syntax:
 
