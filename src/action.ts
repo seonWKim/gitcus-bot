@@ -69,16 +69,15 @@ async function run(): Promise<void> {
       core.setOutput("comments-generated", "1");
     } else {
       // ── Push trigger ──
-      // Detect new/modified markdown files and read them from the checkout
+      // Detect newly added markdown files from the push commits.
+      // We intentionally skip modified files to avoid duplicate comments
+      // on posts that are just being edited.
       const payload = github.context.payload;
       const files: string[] = [];
 
       if (payload.commits) {
         for (const commit of payload.commits) {
-          const commitFiles = [
-            ...(commit.added ?? []),
-            ...(commit.modified ?? []),
-          ] as string[];
+          const commitFiles = (commit.added ?? []) as string[];
 
           for (const file of commitFiles) {
             // Only process markdown files in common blog content directories
